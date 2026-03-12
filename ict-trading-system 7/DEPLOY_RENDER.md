@@ -111,6 +111,9 @@ create URL-encoding and path issues in some deploy workflows. Prefer a folder na
 ### Build fails with "no pyproject.toml found"
 - Verify pyproject.toml is at the rootDir level
 - Check render.yaml rootDir setting
+- In Render dashboard, **Root Directory must be a folder**, not a file.
+  - Correct example for this repo: `ict-trading-system 7`
+  - Incorrect example: `pyproject.toml` (this causes `cd .../pyproject.toml: No such file or directory`)
 
 ### App crashes on startup
 - Check Render logs for Python import errors
