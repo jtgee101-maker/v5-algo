@@ -26,7 +26,7 @@ This repo includes a `render.yaml` Blueprint file. Render reads it automatically
 4. Configure:
    - **Name**: `ict-trade-mission-control`
    - **Runtime**: Python
-   - **Build Command**: `pip install -e .`
+   - **Build Command**: `pip install .`
    - **Start Command**: `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`
    - **Plan**: Free
 5. Add environment variables (see below)
@@ -98,6 +98,13 @@ repo-root/
 
 If your repo has the project nested in a subfolder (like `ict-trading-system/`),
 set `rootDir: ict-trading-system` in render.yaml.
+
+
+### Folder naming for Root Directory
+
+Avoid folder names with spaces (for example `ict-trading-system 7`) because they can
+create URL-encoding and path issues in some deploy workflows. Prefer a folder name like
+`ict-trading-system` and set Render `rootDir` to that folder name.
 
 ## Troubleshooting
 
