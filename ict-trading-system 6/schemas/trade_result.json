@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TradeResult",
+  "description": "Post-execution trade record",
+  "type": "object",
+  "required": ["trade_id", "symbol", "direction", "strategy_id", "entry_time", "status"],
+  "properties": {
+    "trade_id": {"type": "string"},
+    "order_ref": {"type": "string"},
+    "signal_ref": {"type": "string"},
+    "symbol": {"type": "string"},
+    "direction": {"type": "string", "enum": ["long", "short"]},
+    "strategy_id": {"type": "string"},
+    "entry_time": {"type": "string", "format": "date-time"},
+    "entry_price_requested": {"type": "number"},
+    "entry_price_filled": {"type": "number"},
+    "entry_slippage_ticks": {"type": "number"},
+    "stop_price": {"type": "number"},
+    "targets": {"type": "array", "items": {"type": "object"}},
+    "exit_time": {"type": "string", "format": "date-time"},
+    "exit_price": {"type": "number"},
+    "exit_reason": {
+      "type": "string",
+      "enum": ["target_hit", "stop_hit", "invalidation", "manual_close", "kill_switch", "session_end", "timeout"]
+    },
+    "pnl_dollars": {"type": "number"},
+    "pnl_pct": {"type": "number"},
+    "r_multiple": {"type": "number"},
+    "position_size": {"type": "number"},
+    "confidence_at_entry": {"type": "number"},
+    "confluence_tags": {"type": "array", "items": {"type": "string"}},
+    "regime_at_entry": {"type": "string"},
+    "session": {"type": "string"},
+    "status": {
+      "type": "string",
+      "enum": ["open", "closed_win", "closed_loss", "closed_breakeven", "cancelled"]
+    },
+    "execution_quality": {
+      "type": "object",
+      "properties": {
+        "fill_latency_ms": {"type": "integer"},
+        "slippage_ticks": {"type": "number"},
+        "spread_at_entry": {"type": "number"}
+      }
+    }
+  }
+}

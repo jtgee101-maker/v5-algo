@@ -1,0 +1,63 @@
+# Market Structure Detection Configuration
+
+sessions:
+  asia:
+    start_utc: "00:00"
+    end_utc: "08:00"
+  london:
+    start_utc: "08:00"
+    end_utc: "13:00"
+  ny:
+    start_utc: "13:00"
+    end_utc: "21:00"
+  ny_killzone:
+    start_utc: "13:30"
+    end_utc: "16:00"
+
+swing_detection:
+  lookback_bars: 5
+  min_swing_distance_atr: 0.3
+  bos_confirmation: close  # 'close' or 'wick' — require close beyond swing for BOS
+
+smt:
+  pairs:
+    - [EURUSD, DXY]
+    - [NAS100, US30]
+    - [BTCUSD, ETHUSD]
+  max_divergence_bars: 8
+  min_atr_filter: 0.5
+  require_session_valid: true
+
+po3:
+  accumulation_max_range_atr_pct: 0.40
+  manipulation_min_sweep_atr: 0.30
+  distribution_min_expansion_atr: 0.60
+  max_accumulation_bars: 60
+  max_manipulation_bars: 15
+
+psych_levels:
+  NAS100:
+    granularity: [0, 25, 50, 75]
+    big_figure: 100
+  US30:
+    granularity: [0, 25, 50, 75]
+    big_figure: 100
+  EURUSD:
+    granularity: [0, 20, 50, 80]
+    big_figure: 100   # pips
+  BTCUSD:
+    granularity: [0, 500]
+    big_figure: 1000
+  proximity_ticks: 10
+
+fvg:
+  displacement_min_body_atr: 1.5
+  max_age_bars: 50
+  min_gap_size_ticks: 2
+
+liquidity:
+  equal_level_tolerance_ticks: 3
+  min_cluster_size: 2
+  opening_range_minutes: 30
+  lookback_days_for_pdh_pdl: 1
+  lookback_weeks_for_weekly: 1
