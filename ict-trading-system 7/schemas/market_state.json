@@ -1,0 +1,160 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MarketState",
+  "description": "Output of the Market Structure Engine — all labeled features for a symbol at a point in time",
+  "type": "object",
+  "required": ["timestamp", "symbol", "session", "session_ranges", "liquidity_pools", "structure_bias"],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "symbol": {
+      "type": "string",
+      "enum": ["NAS100", "US30", "EURUSD", "BTCUSD"]
+    },
+    "session": {
+      "type": "string",
+      "enum": ["asia", "london", "ny", "ny_killzone", "off_session"]
+    },
+    "session_ranges": {
+      "type": "object",
+      "properties": {
+        "overnight": {"$ref": "#/definitions/price_range"},
+        "asia": {"$ref": "#/definitions/price_range"},
+        "london": {"$ref": "#/definitions/price_range"},
+        "ny_opening": {"$ref": "#/definitions/price_range"}
+      }
+    },
+    "liquidity_pools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["price", "type", "strength_score"],
+        "properties": {
+          "price": {"type": "number"},
+          "type": {
+            "type": "string",
+            "enum": ["pdh", "pdl", "asia_high", "asia_low", "weekly_high", "weekly_low", "equal_highs", "equal_lows", "opening_range_high", "opening_range_low", "swing_cluster"]
+          },
+          "strength_score": {"type": "number", "minimum": 0, "maximum": 1},
+          "age_bars": {"type": "integer"},
+          "swept": {"type": "boolean", "default": false},
+          "swept_timestamp": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "structure_bias": {
+      "type": "string",
+      "enum": ["bullish", "bearish", "ranging"]
+    },
+    "swing_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["price", "type", "bar_index", "timestamp"],
+        "properties": {
+          "price": {"type": "number"},
+          "type": {"type": "string", "enum": ["swing_high", "swing_low"]},
+          "bar_index": {"type": "integer"},
+          "timestamp": {"type": "string", "format": "date-time"},
+          "broken": {"type": "boolean", "default": false}
+        }
+      }
+    },
+    "smt_signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pair", "direction", "strength", "timestamp"],
+        "properties": {
+          "pair": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "direction": {"type": "string", "enum": ["bullish", "bearish"]},
+          "strength": {"type": "number", "minimum": 0, "maximum": 1},
+          "timestamp": {"type": "string", "format": "date-time"},
+          "session_valid": {"type": "boolean"}
+        }
+      }
+    },
+    "po3_state": {
+      "type": "object",
+      "required": ["phase"],
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": ["idle", "accumulating", "manipulated", "distributing", "complete"]
+        },
+        "accumulation_range": {"$ref": "#/definitions/price_range"},
+        "manipulation_extreme": {"type": "number"},
+        "distribution_bias": {"type": "string", "enum": ["bullish", "bearish"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "psych_levels": {
+      "type": "object",
+      "properties": {
+        "nearest_above": {"type": "number"},
+        "nearest_below": {"type": "number"},
+        "proximity_score": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "fvgs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "upper", "lower"],
+        "properties": {
+          "type": {"type": "string", "enum": ["bullish", "bearish"]},
+          "upper": {"type": "number"},
+          "lower": {"type": "number"},
+          "filled": {"type": "boolean", "default": false},
+          "age_bars": {"type": "integer"}
+        }
+      }
+    },
+    "displacement_candles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "direction", "body_atr_ratio"],
+        "properties": {
+          "timestamp": {"type": "string", "format": "date-time"},
+          "direction": {"type": "string", "enum": ["bullish", "bearish"]},
+          "body_atr_ratio": {"type": "number"}
+        }
+      }
+    },
+    "sweep_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "level_swept", "direction", "rejected"],
+        "properties": {
+          "timestamp": {"type": "string", "format": "date-time"},
+          "level_swept": {"type": "number"},
+          "level_type": {"type": "string"},
+          "direction": {"type": "string", "enum": ["above", "below"]},
+          "rejected": {"type": "boolean"},
+          "displacement_followed": {"type": "boolean"}
+        }
+      }
+    }
+  },
+  "definitions": {
+    "price_range": {
+      "type": "object",
+      "required": ["high", "low"],
+      "properties": {
+        "high": {"type": "number"},
+        "low": {"type": "number"},
+        "mid": {"type": "number"},
+        "range_atr_ratio": {"type": "number"}
+      }
+    }
+  }
+}
