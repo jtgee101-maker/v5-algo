@@ -124,7 +124,10 @@ class TradeLockerClient:
         logger.info("tradelocker.token_refreshed")
 
     def _auth_headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._access_token}"}
+        return {
+            "Authorization": f"Bearer {self._access_token}",
+            "accNum": os.environ.get("TRADELOCKER_ACCOUNT_ID", ""),
+        }
 
     # ── Resilient Request ──────────────────────────────────────────────────
 
