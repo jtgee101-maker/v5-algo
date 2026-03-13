@@ -48,7 +48,11 @@ class TradeLockerClient:
         with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
-        self.base_url = os.environ.get("TRADELOCKER_BASE_URL", self.config["broker"]["base_url"])
+        # Allow env var override for base URL (critical for demo vs live)
+        self.base_url = os.environ.get(
+            "TRADELOCKER_BASE_URL",
+            self.config["broker"]["base_url"],
+        )
         self.max_retries = self.config["api"]["max_retries"]
         self.backoff_base = self.config["api"]["retry_backoff_base_seconds"]
         self.timeout = self.config["api"]["timeout_seconds"]

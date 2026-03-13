@@ -3,7 +3,7 @@
 
 broker:
   provider: tradelocker
-  base_url: "https://demo.tradelocker.com"  # Demo endpoint (can be overridden by TRADELOCKER_BASE_URL)
+  base_url: "https://demo.tradelocker.com"  # Override with TRADELOCKER_BASE_URL env var
   account_type: demo
   # Credentials loaded from environment:
   #   TRADELOCKER_EMAIL
