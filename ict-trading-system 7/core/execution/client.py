@@ -126,7 +126,7 @@ class TradeLockerClient:
     def _auth_headers(self) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {self._access_token}",
-            "accNum": os.environ.get("TRADELOCKER_ACCOUNT_ID", ""),
+            "accNum": os.environ.get("TRADELOCKER_ACC_NUM", os.environ.get("TRADELOCKER_ACCOUNT_ID", "")),
         }
 
     # ── Resilient Request ──────────────────────────────────────────────────
