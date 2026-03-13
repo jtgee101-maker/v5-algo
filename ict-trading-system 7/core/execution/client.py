@@ -89,7 +89,7 @@ class TradeLockerClient:
         }
 
         resp = await self._client.post("/auth/jwt/token", json=payload)
-        if resp.status_code != 200:
+        if resp.status_code not in (200, 201):
             raise BrokerError(resp.status_code, f"Auth failed: {resp.text}")
 
         data = resp.json()
@@ -112,7 +112,7 @@ class TradeLockerClient:
             "/auth/jwt/refresh",
             json={"refreshToken": self._refresh_token},
         )
-        if resp.status_code != 200:
+        if resp.status_code not in (200, 201):
             logger.warning("tradelocker.refresh_failed, re-authenticating")
             await self._authenticate()
             return
