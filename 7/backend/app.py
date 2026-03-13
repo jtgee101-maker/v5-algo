@@ -273,17 +273,41 @@ async def run_scan():
             inst_id = inst.get("tradableInstrumentId")
             acc_id = os.environ.get("TRADELOCKER_ACCOUNT_ID", "")
 
-            # Fetch 5-minute candles
-            resp = await client._client.get(
+            # Fetch 5-minute candles — try multiple TradeLocker API paths
+            acc_num = os.environ.get("TRADELOCKER_ACC_NUM", "3")
+            candle_urls = [
                 f"/trade/accounts/{acc_id}/instruments/{inst_id}/candles",
-                headers=client._auth_headers(),
-                params={"resolution": "5", "count": 200},
-            )
+                f"/trade/accounts/{acc_num}/instruments/{inst_id}/candles",
+                f"/trade/history/lastCandles/{inst_id}",
+                f"/trade/accounts/{acc_id}/historicalCandles/{inst_id}",
+            ]
+            resp = None
+            used_url = None
+            url_statuses = []
+            for url in candle_urls:
+                try:
+                    cur_resp = await client._client.get(
+                        url,
+                        headers=client._auth_headers(),
+                        params={"resolution": "5", "count": 200},
+                    )
+                    url_statuses.append(f"{url} → {cur_resp.status_code}")
+                    if cur_resp.status_code in (200, 201):
+                        resp = cur_resp
+                        used_url = url
+                        break
+                except Exception:
+                    url_statuses.append(f"{url} → failed")
+                    continue
 
-            if resp.status_code not in (200, 201):
-                result["errors"].append(f"{symbol}: candles HTTP {resp.status_code}")
+            if not resp or resp.status_code not in (200, 201):
+                result["errors"].append(
+                    f"{symbol}: candles not found. Tried: {url_statuses}"
+                )
                 result["symbols_scanned"].append(symbol)
                 continue
+
+            result["candle_counts"][symbol + "_url"] = used_url
 
             candle_data = resp.json()
             result["symbols_scanned"].append(symbol)
