@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routers import (
@@ -70,3 +70,32 @@ app.include_router(reconciliation_router, prefix="/api")
 @app.get("/")
 async def root():
     return {"name": "ICT Trade Mission Control", "version": VERSION, "docs": "/docs"}
+
+
+@app.post("/api/seed-demo")
+async def seed_demo_data():
+    """Seed demo records for empty dashboards."""
+    from asyncio import to_thread
+
+    from scripts.bootstrap_demo_data import seed
+
+    await to_thread(seed)
+    return {"success": True, "message": "Demo data seeded."}
+
+
+@app.post("/api/broker-test")
+async def broker_test():
+    """Verify TradeLocker auth and account connectivity from env vars."""
+    from core.execution.client import BrokerError, TradeLockerClient
+
+    client = TradeLockerClient()
+    try:
+        await client.connect()
+        account = await client.get_account_state()
+        return {"success": True, "base_url": client.base_url, "account": account}
+    except BrokerError as exc:
+        raise HTTPException(status_code=502, detail={"success": False, "error": exc.detail})
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail={"success": False, "error": str(exc)})
+    finally:
+        await client.disconnect()
