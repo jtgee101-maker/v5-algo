@@ -3,7 +3,7 @@
 
 broker:
   provider: tradelocker
-  base_url: "https://api.tradelocker.com"  # Update with actual GatesFX demo endpoint
+  base_url: "https://demo.tradelocker.com"  # Demo endpoint (can be overridden by TRADELOCKER_BASE_URL)
   account_type: demo
   # Credentials loaded from environment:
   #   TRADELOCKER_EMAIL

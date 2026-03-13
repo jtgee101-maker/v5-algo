@@ -26,3 +26,30 @@ services:
         sync: false
       - key: TRADELOCKER_ACCOUNT_ID
         sync: false
+      - key: TRADELOCKER_BASE_URL
+        value: "https://demo.tradelocker.com"
+
+  - type: worker
+    name: ict-pipeline-worker
+    runtime: python
+    plan: free
+    rootDir: "ict-trading-system 7"
+    buildCommand: pip install .
+    startCommand: python scripts/run_pipeline_worker.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.10"
+      - key: DEFAULT_MODE
+        value: "shadow"
+      - key: MANUAL_APPROVAL
+        value: "true"
+      - key: TRADELOCKER_EMAIL
+        sync: false
+      - key: TRADELOCKER_PASSWORD
+        sync: false
+      - key: TRADELOCKER_SERVER
+        sync: false
+      - key: TRADELOCKER_ACCOUNT_ID
+        sync: false
+      - key: TRADELOCKER_BASE_URL
+        value: "https://demo.tradelocker.com"

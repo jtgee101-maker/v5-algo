@@ -60,6 +60,20 @@ fine for shadow/demo validation. For persistent data, add Render Postgres.
 
 > Do not commit real credentials to Git. Set these only in Render Environment settings.
 
+
+## Background Worker (pipeline + agents)
+
+The API web service only serves data. To continuously generate signals and run agents,
+add a Render worker service:
+
+- **Type**: Background Worker
+- **Root Directory**: `ict-trading-system 7`
+- **Build Command**: `pip install .`
+- **Start Command**: `python scripts/run_pipeline_worker.py`
+
+Use the same `TRADELOCKER_*`, `DEFAULT_MODE`, and `MANUAL_APPROVAL` environment variables
+as the web service.
+
 ## Verify Deployment
 
 After deploy, check:
