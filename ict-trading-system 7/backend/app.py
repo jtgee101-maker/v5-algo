@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routers import (
@@ -70,3 +70,53 @@ app.include_router(reconciliation_router, prefix="/api")
 @app.get("/")
 async def root():
     return {"name": "ICT Trade Mission Control", "version": VERSION, "docs": "/docs"}
+
+
+@app.post("/api/seed-demo")
+async def seed_demo_data():
+    """Seed demo records for empty dashboards."""
+    from asyncio import to_thread
+
+    from scripts.bootstrap_demo_data import seed
+
+    await to_thread(seed)
+    return {"success": True, "message": "Demo data seeded."}
+
+
+@app.post("/api/broker-test")
+async def broker_test():
+    """Verify TradeLocker auth and account connectivity from env vars."""
+    from core.execution.client import TradeLockerClient
+
+    client = TradeLockerClient()
+    result = {"success": False, "base_url": client.base_url, "connected": False}
+
+    try:
+        await client.connect()
+        result["auth"] = "success"
+        result["connected"] = True
+
+        # List all accounts first
+        try:
+            all_accounts_resp = await client._client.get(
+                "/auth/jwt/all-accounts",
+                headers={"Authorization": f"Bearer {client._access_token}"},
+            )
+            result["all_accounts"] = all_accounts_resp.json()
+        except Exception as e:
+            result["all_accounts"] = f"Failed: {str(e)}"
+
+        # Get account state
+        try:
+            acct = await client.get_account_state()
+            result["account"] = acct
+        except Exception as e:
+            result["account"] = f"Failed: {str(e)}"
+
+        result["success"] = True
+        return result
+    except Exception as exc:
+        result["error"] = str(exc)
+        raise HTTPException(status_code=500, detail=result)
+    finally:
+        await client.disconnect()
