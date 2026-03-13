@@ -26,7 +26,7 @@ This repo includes a `render.yaml` Blueprint file. Render reads it automatically
 4. Configure:
    - **Name**: `ict-trade-mission-control`
    - **Runtime**: Python
-   - **Build Command**: `pip install -e .`
+   - **Build Command**: `pip install .`
    - **Start Command**: `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`
    - **Plan**: Free
 5. Add environment variables (see below)
@@ -44,6 +44,10 @@ Set these in Render's dashboard under **Environment**:
 | `LIVE_LOCKED` | `true` | Yes |
 | `MANUAL_APPROVAL` | `true` | Yes |
 | `API_KEYS` | `{"your-key": "admin"}` | Only if AUTH_DISABLED=false |
+| `TRADELOCKER_EMAIL` | your broker login email | Required for live broker auth |
+| `TRADELOCKER_PASSWORD` | your broker password | Required for live broker auth |
+| `TRADELOCKER_SERVER` | e.g. `GATESFX DEMO` | Required for live broker auth |
+| `TRADELOCKER_ACCOUNT_ID` | e.g. `1967672` | Required for live broker auth |
 
 ### Optional (for Postgres instead of SQLite)
 
@@ -53,6 +57,22 @@ The app detects this and switches from SQLite to Postgres. No code changes neede
 Without Postgres, the app uses SQLite in the `data/` directory. Note that on Render's
 free tier, the filesystem is ephemeral — SQLite data resets on each deploy. This is
 fine for shadow/demo validation. For persistent data, add Render Postgres.
+
+> Do not commit real credentials to Git. Set these only in Render Environment settings.
+
+
+## Background Worker (pipeline + agents)
+
+The API web service only serves data. To continuously generate signals and run agents,
+add a Render worker service:
+
+- **Type**: Background Worker
+- **Root Directory**: `ict-trading-system 7`
+- **Build Command**: `pip install .`
+- **Start Command**: `python scripts/run_pipeline_worker.py`
+
+Use the same `TRADELOCKER_*`, `DEFAULT_MODE`, and `MANUAL_APPROVAL` environment variables
+as the web service.
 
 ## Verify Deployment
 
@@ -99,11 +119,21 @@ repo-root/
 If your repo has the project nested in a subfolder (like `ict-trading-system/`),
 set `rootDir: ict-trading-system` in render.yaml.
 
+
+### Folder naming for Root Directory
+
+Avoid folder names with spaces (for example `ict-trading-system 7`) because they can
+create URL-encoding and path issues in some deploy workflows. Prefer a folder name like
+`ict-trading-system` and set Render `rootDir` to that folder name.
+
 ## Troubleshooting
 
 ### Build fails with "no pyproject.toml found"
 - Verify pyproject.toml is at the rootDir level
 - Check render.yaml rootDir setting
+- In Render dashboard, **Root Directory must be a folder**, not a file.
+  - Correct example for this repo: `ict-trading-system 7`
+  - Incorrect example: `pyproject.toml` (this causes `cd .../pyproject.toml: No such file or directory`)
 
 ### App crashes on startup
 - Check Render logs for Python import errors
