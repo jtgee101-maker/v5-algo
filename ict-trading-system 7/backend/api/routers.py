@@ -375,3 +375,50 @@ async def reconciliation_status(db: AsyncSession = Depends(get_db)):
     return await ReconciliationService(db).get_status()
 
 
+# ══════════════════════════════════════════════════════════════════════
+# DAILY REVIEW / TRADE JOURNAL / STREAK
+# ══════════════════════════════════════════════════════════════════════
+review_router = APIRouter(tags=["review"])
+
+
+@review_router.get("/review/daily")
+async def daily_review(
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Daily performance summary with P&L, signals, strategy breakdown, and streak."""
+    from backend.services.daily_review_service import DailyReviewService
+    return await DailyReviewService(db).daily_summary(date)
+
+
+@review_router.get("/review/weekly")
+async def weekly_review(db: AsyncSession = Depends(get_db)):
+    """Weekly rollup — last 7 days of performance."""
+    from backend.services.daily_review_service import DailyReviewService
+    return await DailyReviewService(db).weekly_rollup()
+
+
+@review_router.get("/review/streak")
+async def streak(db: AsyncSession = Depends(get_db)):
+    """Current win/loss streak and consistency metrics."""
+    from backend.services.daily_review_service import DailyReviewService
+    return await DailyReviewService(db).streak_data()
+
+
+@review_router.get("/review/trade-journal")
+async def trade_journal(
+    trade_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Full trade journal — reasoning chain from signal to close with P&L."""
+    from backend.services.daily_review_service import DailyReviewService
+    return {"entries": await DailyReviewService(db).trade_journal(trade_id)}
+
+
+@review_router.post("/review/auto-journal/{trade_id}")
+async def auto_journal(trade_id: str, db: AsyncSession = Depends(get_db)):
+    """Auto-generate a journal entry for a closed trade."""
+    from backend.services.daily_review_service import DailyReviewService
+    return await DailyReviewService(db).generate_auto_journal(trade_id)
+
+

@@ -20,6 +20,7 @@ from backend.api.routers import (
     market_router,
     metrics_router,
     reconciliation_router,
+    review_router,
     risk_router,
     signals_router,
     trades_router,
@@ -85,6 +86,7 @@ app.include_router(journals_router, prefix="/api")
 app.include_router(agents_router, prefix="/api")
 app.include_router(metrics_router, prefix="/api")
 app.include_router(reconciliation_router, prefix="/api")
+app.include_router(review_router, prefix="/api")
 
 
 @app.get("/")
@@ -92,13 +94,18 @@ async def root():
     return {"name": "ICT Trade Mission Control", "version": VERSION, "docs": "/docs"}
 
 
+# ══════════════════════════════════════════════════════════════════════
+# BROKER TEST
+# ══════════════════════════════════════════════════════════════════════
+
 @app.post("/api/broker-test")
 async def broker_test():
+    """Verify TradeLocker auth and account connectivity."""
     result = {
         "connected": False, "auth": None, "all_accounts": None,
         "account": None, "instruments": [], "error": None,
     }
-    required = ["TRADELOCKER_EMAIL", "TRADELOCKER_PASSWORD", "TRADELOCKER_SERVER", "TRADELOCKER_ACCOUNT_ID"]
+    required = ["TRADELOCKER_EMAIL", "TRADELOCKER_PASSWORD", "TRADELOCKER_SERVER"]
     missing = [k for k in required if not os.environ.get(k)]
     if missing:
         result["error"] = f"Missing env vars: {missing}"
@@ -123,7 +130,10 @@ async def broker_test():
             result["account"] = str(e)
         try:
             instruments = await client.get_instruments()
-            result["instruments"] = [{"name": i.get("name", ""), "id": i.get("tradableInstrumentId", "")} for i in instruments[:20]]
+            result["instruments"] = [
+                {"name": i.get("name", ""), "id": i.get("tradableInstrumentId", "")}
+                for i in instruments[:30]
+            ]
         except Exception as e:
             result["instruments"] = str(e)
         await client.disconnect()
@@ -133,8 +143,13 @@ async def broker_test():
     return result
 
 
+# ══════════════════════════════════════════════════════════════════════
+# SEED DEMO DATA
+# ══════════════════════════════════════════════════════════════════════
+
 @app.post("/api/seed-demo")
 async def seed_demo():
+    """Seed the database with demo data for UI testing."""
     try:
         import json
         from backend.db.models import Account, TradeSignalRecord
@@ -146,14 +161,27 @@ async def seed_demo():
             if not await repo.get_by_id("acct_demo_1"):
                 await repo.create(
                     id="acct_demo_1", broker_name="gatesfx", account_name="GatesFX Demo",
-                    account_type="demo", mode="shadow", balance=5000, equity=5000,
-                    status="connected", currency="USD", updated_at=now.isoformat(),
+                    account_type="demo", mode="shadow", balance=50000, equity=50000,
+                    free_margin=50000, status="connected", currency="USD",
+                    updated_at=now.isoformat(),
                 )
                 created.append("account")
             sig_repo = GenericRepository(session, TradeSignalRecord)
             if not await sig_repo.list_all(limit=1):
-                for sym, side, conf, st in [("NAS100","buy",0.78,"pending"),("EURUSD","buy",0.74,"pending"),("US30","sell",0.82,"approved"),("BTCUSD","sell",0.65,"rejected")]:
-                    await sig_repo.create(symbol=sym, strategy_name="ny_sweep_reversal", strategy_version="v1", timestamp=now.isoformat(), side=side, confidence=conf, entry_price=18245.5, stop_price=18210.0, take_profit_1=18290.0, confluence_tags=json.dumps(["smt_divergence"]), status=st, json_payload="{}")
+                for sym, side, conf, st in [
+                    ("NAS100", "buy", 0.78, "pending"),
+                    ("EURUSD", "buy", 0.74, "pending"),
+                    ("US30", "sell", 0.82, "approved"),
+                    ("BTCUSD", "sell", 0.65, "rejected"),
+                ]:
+                    await sig_repo.create(
+                        symbol=sym, strategy_name="ny_sweep_reversal",
+                        strategy_version="v1", timestamp=now.isoformat(),
+                        side=side, confidence=conf, entry_price=18245.5,
+                        stop_price=18210.0, take_profit_1=18290.0,
+                        confluence_tags=json.dumps(["smt_divergence", "sweep_rejected"]),
+                        status=st, json_payload="{}",
+                    )
                 created.append("signals")
             await session.commit()
         return {"success": True, "created": created}
@@ -161,14 +189,25 @@ async def seed_demo():
         return {"success": False, "error": str(e)}
 
 
+# ══════════════════════════════════════════════════════════════════════
+# MARKET SCANNER — called by Base44 on a timer
+# ══════════════════════════════════════════════════════════════════════
+
 @app.post("/api/run-scan")
 async def run_scan():
-    """Run one market scan cycle. Base44 calls this on a timer."""
+    """Scan active pairs based on session, run strategies, persist signals.
+
+    Session logic:
+    - BTCUSD: 24/7 (always scanned)
+    - EURUSD: Mon-Fri 08:00-21:00 UTC (London + NY)
+    - NAS100, US30: Mon-Fri 13:00-21:00 UTC (NY session)
+
+    Base44 calls this every 60 seconds when auto-scan is enabled.
+    """
     import json as json_mod
 
     now = datetime.now(timezone.utc)
-    hour = now.hour
-    weekday = now.weekday()
+    hour, weekday = now.hour, now.weekday()
 
     result = {
         "timestamp": now.isoformat(),
@@ -176,6 +215,7 @@ async def run_scan():
         "signals_generated": [],
         "errors": [],
         "session": "off_hours",
+        "candle_counts": {},
     }
 
     # Session-aware pair selection
@@ -190,61 +230,89 @@ async def run_scan():
             active_pairs.append("EURUSD")
             result["session"] = "london_pre_ny"
 
+    # Connect to broker
     try:
         from core.execution.client import TradeLockerClient
-
         client = TradeLockerClient()
         await client.connect()
     except Exception as e:
-        result["errors"].append(f"Broker connect failed: {str(e)}")
+        result["errors"].append(f"Broker: {str(e)[:200]}")
         return result
 
+    # Update account balance in DB
+    try:
+        acct_data = await client.get_account_state()
+        if acct_data and isinstance(acct_data, dict) and acct_data.get("s") == "ok":
+            details = acct_data.get("d", {}).get("accountDetailsData", [])
+            if len(details) >= 5:
+                from backend.db.models import Account
+                from backend.db.repositories.base import GenericRepository
+                async with AsyncSessionLocal() as session:
+                    repo = GenericRepository(session, Account)
+                    await repo.update_by_id(
+                        "acct_demo_1",
+                        balance=float(details[0]),
+                        equity=float(details[1]),
+                        free_margin=float(details[4]) if len(details) > 4 else 0,
+                        status="connected",
+                        updated_at=now.isoformat(),
+                    )
+                    await session.commit()
+    except Exception as e:
+        result["errors"].append(f"Account update: {str(e)[:100]}")
+
+    # Scan each active pair
     for symbol in active_pairs:
         try:
             instruments = await client.get_instruments()
             inst = next((i for i in instruments if i.get("name") == symbol), None)
             if not inst:
-                result["errors"].append(f"{symbol}: not found in instruments")
+                result["errors"].append(f"{symbol}: not found in broker instruments")
                 continue
 
             inst_id = inst.get("tradableInstrumentId")
             acc_id = os.environ.get("TRADELOCKER_ACCOUNT_ID", "")
 
-            candles_resp = await client._client.get(
+            # Fetch 5-minute candles
+            resp = await client._client.get(
                 f"/trade/accounts/{acc_id}/instruments/{inst_id}/candles",
                 headers=client._auth_headers(),
                 params={"resolution": "5", "count": 200},
             )
 
-            if candles_resp.status_code not in (200, 201):
-                result["errors"].append(f"{symbol}: candles status {candles_resp.status_code}")
+            if resp.status_code not in (200, 201):
+                result["errors"].append(f"{symbol}: candles HTTP {resp.status_code}")
                 result["symbols_scanned"].append(symbol)
                 continue
 
-            candle_data = candles_resp.json()
+            candle_data = resp.json()
             result["symbols_scanned"].append(symbol)
 
-            # Try building market structure and running strategies
-            # This may fail if candle format doesn't match yet — that's OK
-            # The scan still proves the data pipeline works
+            # Count candles for diagnostics
+            if isinstance(candle_data, dict) and "d" in candle_data:
+                bars = candle_data["d"]
+                if isinstance(bars, list):
+                    result["candle_counts"][symbol] = len(bars)
+                elif isinstance(bars, dict):
+                    first_key = next(iter(bars), None)
+                    if first_key and isinstance(bars[first_key], list):
+                        result["candle_counts"][symbol] = len(bars[first_key])
+
+            # Try market structure + strategy analysis
             try:
                 from core.market_structure.engine import MarketStructureEngine
-
-                ms_engine = MarketStructureEngine()
-                market_state = ms_engine.build(symbol=symbol, candle_data=candle_data, timestamp=now)
+                market_state = MarketStructureEngine().build(
+                    symbol=symbol, candle_data=candle_data, timestamp=now
+                )
 
                 from core.strategy.engine import StrategyEngine
-
-                strat_engine = StrategyEngine()
-                signals = strat_engine.evaluate(market_state)
+                signals = StrategyEngine().evaluate(market_state)
 
                 for signal in signals:
                     from backend.db.models import TradeSignalRecord
                     from backend.db.repositories.base import GenericRepository
-
                     async with AsyncSessionLocal() as session:
-                        repo = GenericRepository(session, TradeSignalRecord)
-                        await repo.create(
+                        await GenericRepository(session, TradeSignalRecord).create(
                             symbol=signal.symbol,
                             strategy_name=signal.strategy_id,
                             strategy_version="v1",
@@ -256,19 +324,25 @@ async def run_scan():
                             take_profit_1=signal.targets[0].price if signal.targets else None,
                             confluence_tags=json_mod.dumps(signal.confluence_tags),
                             status="pending",
-                            json_payload="{}",
+                            json_payload=json_mod.dumps({
+                                "reward_risk": signal.reward_risk,
+                                "invalidation": signal.invalidation,
+                            }),
                         )
                         await session.commit()
-                    result["signals_generated"].append(
-                        {
-                            "symbol": signal.symbol,
-                            "strategy": signal.strategy_id,
-                            "direction": signal.direction.value,
-                            "confidence": signal.confidence,
-                        }
-                    )
+
+                    result["signals_generated"].append({
+                        "symbol": signal.symbol,
+                        "strategy": signal.strategy_id,
+                        "direction": signal.direction.value,
+                        "confidence": round(signal.confidence, 3),
+                        "entry": signal.entry_price,
+                        "stop": signal.stop_price,
+                        "rr": signal.reward_risk,
+                    })
+
             except Exception as e:
-                result["errors"].append(f"{symbol}: analysis error — {str(e)[:200]}")
+                result["errors"].append(f"{symbol}: analysis — {str(e)[:200]}")
 
         except Exception as e:
             result["errors"].append(f"{symbol}: {str(e)[:200]}")
