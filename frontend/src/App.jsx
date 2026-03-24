@@ -14,6 +14,7 @@ import Risk from './pages/Risk';
 import Scanner from './pages/Scanner';
 import Settings from './pages/Settings';
 import Signals from './pages/Signals';
+import BuildProgress from './pages/BuildProgress';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/reasoning" element={<Reasoning />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/risk" element={<Risk />} />
+            <Route path="/build-progress" element={<BuildProgress />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
