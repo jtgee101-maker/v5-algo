@@ -1,0 +1,13 @@
+httpx>=0.27
+pydantic>=2.5
+pyyaml>=6.0
+jsonschema>=4.20
+structlog>=24.0
+python-dateutil>=2.9
+numpy>=1.26
+pandas>=2.1
+fastapi>=0.115
+uvicorn[standard]>=0.32
+sqlalchemy>=2.0
+aiosqlite>=0.20
+tradelocker>=0.1

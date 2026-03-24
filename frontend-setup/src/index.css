@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@theme {
+  --color-desk-bg: #08080d;
+  --color-desk-card: #0f1117;
+  --color-desk-border: #1a1d2e;
+  --color-desk-hover: #1e2235;
+  --color-profit: #00e676;
+  --color-loss: #ff1744;
+  --color-gold: #ffd740;
+  --color-info: #448aff;
+  --color-muted: #8a8f98;
+  --color-text: #e8eaed;
+  --color-text-dim: #6b7080;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-desk-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Utility classes */
+.font-mono { font-family: var(--font-mono); }
+.text-profit { color: var(--color-profit); }
+.text-loss { color: var(--color-loss); }
+.text-gold { color: var(--color-gold); }
+.text-info { color: var(--color-info); }
+.text-muted { color: var(--color-muted); }
+
+.bg-card { background: var(--color-desk-card); }
+.border-card { border: 1px solid var(--color-desk-border); }
+
+.price-up { color: var(--color-profit); }
+.price-down { color: var(--color-loss); }
+.price-neutral { color: var(--color-muted); }
+
+/* Card component */
+.card {
+  background: var(--color-desk-card);
+  border: 1px solid var(--color-desk-border);
+  border-radius: 4px;
+  padding: 12px 14px;
+}
+.card:hover { border-color: var(--color-desk-hover); }
+
+/* Dense table */
+.dense-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dense-table th { 
+  text-align: left; padding: 6px 8px; font-size: 10px; font-weight: 500;
+  color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-desk-border);
+}
+.dense-table td { 
+  padding: 6px 8px; border-bottom: 1px solid var(--color-desk-border);
+  font-family: var(--font-mono); font-size: 12px;
+}
+.dense-table td.right { text-align: right; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-desk-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-desk-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
+
+/* Badge */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 3px; font-size: 10px;
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.badge-bullish { background: #00e67622; color: var(--color-profit); }
+.badge-bearish { background: #ff174422; color: var(--color-loss); }
+.badge-neutral { background: #8a8f9822; color: var(--color-muted); }
+.badge-high { background: #ffd74022; color: var(--color-gold); }
+.badge-medium { background: #448aff22; color: var(--color-info); }
+.badge-low { background: #8a8f9822; color: var(--color-muted); }
+
+/* Confidence meter */
+.conf-meter { display: flex; gap: 2px; }
+.conf-bar { width: 8px; height: 16px; border-radius: 2px; background: var(--color-desk-border); }
+.conf-bar.filled { background: var(--color-gold); }

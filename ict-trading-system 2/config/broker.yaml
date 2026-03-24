@@ -1,0 +1,48 @@
+# Broker Configuration — TradeLocker via GatesFX Demo
+# NEVER commit real credentials. Use environment variables in production.
+
+broker:
+  provider: tradelocker
+  base_url: "https://demo.tradelocker.com"  # Override with TRADELOCKER_BASE_URL env var
+  account_type: demo
+  # Credentials loaded from environment:
+  #   TRADELOCKER_EMAIL
+  #   TRADELOCKER_PASSWORD
+  #   TRADELOCKER_SERVER
+  #   TRADELOCKER_ACCOUNT_ID
+
+auth:
+  token_refresh_buffer_seconds: 300  # Refresh 5 min before expiry
+  max_auth_retries: 3
+  retry_backoff_base_seconds: 2
+
+api:
+  max_retries: 3
+  retry_backoff_base_seconds: 1
+  timeout_seconds: 30
+  rate_limit_per_second: 5
+
+instruments:
+  symbols:
+    - id: NAS100
+      display: "NASDAQ 100"
+      asset_class: index
+      session: ny
+    - id: US30
+      display: "Dow Jones 30"
+      asset_class: index
+      session: ny
+    - id: EURUSD
+      display: "EUR/USD"
+      asset_class: fx
+      session: ny
+    - id: BTCUSD
+      display: "BTC/USD"
+      asset_class: crypto
+      session: ny  # Only trade during NY for V1
+  cache_refresh_hours: 24
+
+candles:
+  timeframes: ["1m", "5m", "15m", "1h"]
+  max_history_bars: 500
+  storage_dir: "data/candles"

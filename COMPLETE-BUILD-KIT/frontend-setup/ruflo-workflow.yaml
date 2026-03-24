@@ -1,0 +1,55 @@
+name: ict-trade-desk-build
+description: Build Palantir-level trading terminal with parallel agents
+
+stages:
+  - name: foundation
+    description: API layer, theme, hooks
+    agents:
+      - name: api-architect
+        task: "Create all files in src/api/ (client.js, prices.js, tradelocker.js, drm.js, analysis.js, news.js, signals.js, review.js, safety.js, account.js, scratchpad.js). Each module wraps endpoints from CLAUDE.md. Base URL from VITE_API_URL env var."
+      - name: theme-engineer
+        task: "Create src/index.css with Tailwind directives, dark terminal CSS variables (#08080d bg, #0f1117 cards, #00e676 green, #ff1744 red), JetBrains Mono font import, utility classes for price display."
+      - name: hooks-builder
+        task: "Create src/hooks/usePolling.js (React Query wrapper with configurable interval), usePrices.js (polls /market-overview every 45s), usePositions.js (polls /tl/positions every 30s). Create src/store/appStore.js with Zustand for auto-scan toggle and theme state."
+    strategy: parallel
+
+  - name: layout
+    description: Shell, nav, routing
+    agents:
+      - name: layout-builder
+        task: "Build src/components/layout/Shell.jsx (sidebar + topbar + content), Sidebar.jsx (13 nav items with Lucide icons), TopBar.jsx (connection status, balance), PriceTicker.jsx (horizontal price bar all 6 symbols). Set up React Router in App.jsx with all 13 page routes."
+    strategy: sequential
+
+  - name: hero-pages
+    description: Trading Desk + DRM Analysis
+    agents:
+      - name: desk-builder
+        task: "Build src/pages/TradingDesk.jsx — the hero dashboard. Session status, crypto overview, sentiment, 6 symbol cards (SymbolCard.jsx), positions table, DRM signals panel, account strip. Wire to /market-overview + /tl/positions + /drm/scan."
+      - name: drm-builder
+        task: "Build src/pages/DRMAnalysis.jsx — the $23K edge page. Symbol selector, DRM signals with entry/exit zones, FVG list with fill %, displacement events, probability gauges, reasoning bullets. Wire to /drm/{symbol} + /probability. Build DRMSignalCard.jsx, FVGList.jsx, ProbabilityGauge.jsx."
+    strategy: parallel
+
+  - name: charts-scanner
+    description: Candlestick charts + market scanner
+    agents:
+      - name: chart-builder
+        task: "Build src/pages/Charts.jsx using lightweight-charts. CandlestickChart.jsx wrapper. Symbol dropdown, resolution tabs (5m/15m/1h/4h/1D). Dark theme. Wire to /tl/candles/{symbol}."
+      - name: scanner-builder
+        task: "Build src/pages/Scanner.jsx (POST /analyze with auto toggle) and src/pages/Signals.jsx (GET /signals with Take Trade/Pass/Flag buttons). Build SignalCard.jsx, ReasoningList.jsx."
+    strategy: parallel
+
+  - name: remaining-pages
+    description: News, positions, deep dive, journal, review, risk, admin
+    agents:
+      - name: data-pages
+        task: "Build News.jsx, Positions.jsx, DeepDive.jsx. Wire to /news/*, /tl/positions, /prices/{symbol}."
+      - name: review-pages
+        task: "Build Scratchpad.jsx, Journal.jsx, DailyReview.jsx, RiskConsole.jsx, Admin.jsx. Wire to /scratchpad/*, /review/*, /safety/*, /config, /kill-switch."
+    strategy: parallel
+
+  - name: polish
+    description: Final testing and deploy prep
+    agents:
+      - name: qa-tester
+        task: "Run npm run build. Fix any TypeScript/lint errors. Verify all 13 pages render. Check that API calls work. Verify dark theme is consistent. Ensure no console errors."
+    strategy: sequential
