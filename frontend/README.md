@@ -22,25 +22,30 @@ Run endpoint smoke checks before UI testing:
 VITE_API_URL=https://v5-algo.onrender.com/api npm run verify:api
 ```
 
-## Netlify deployment (step-by-step)
-1. Push this repo to GitHub.
-2. In Netlify, create a new site from the repository.
-3. In **Site configuration → Build & deploy → Build settings**, set:
-   - **Base directory:** `frontend`
-   - **Build command:** `npm run build`
-   - **Publish directory:** `dist`
-   - **Node version:** `20`
-4. In **Environment variables**, set:
-   - `VITE_API_URL=https://v5-algo.onrender.com/api`
-5. Redeploy the site.
+## Netlify deployment (conflict-resolved guide)
+Use **one** of the two valid configurations below.
 
-This repository also includes a **root** `netlify.toml` configured for a `frontend/` base directory and SPA redirects.
+### Option A (recommended): use repo-root `netlify.toml`
+1. Push this repo to GitHub.
+2. In Netlify, create a site from this repo.
+3. Ensure Netlify uses the root `netlify.toml` (already configured):
+   - Base directory: `frontend`
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+4. Set env var:
+   - `VITE_API_URL=https://v5-algo.onrender.com/api`
+5. Redeploy.
+
+### Option B (manual UI settings without `netlify.toml`)
+- Build command: `npm run build`
+- Publish directory: `frontend/dist`
+- Env var: `VITE_API_URL=https://v5-algo.onrender.com/api`
 
 ## If Netlify shows “Page not found / product doesn’t exist”
-- Confirm build base directory is `frontend`.
-- Confirm publish directory is `dist` (relative to `frontend`).
-- Confirm `VITE_API_URL` is set in Netlify env vars.
-- Trigger **Clear cache and deploy site** after changing settings.
+- Confirm either Option A or Option B is configured exactly.
+- If using Option A, keep publish as `dist` (because base is `frontend`).
+- If using Option B, set publish to `frontend/dist` (because no base directory is used).
+- Trigger **Clear cache and deploy site** after updating settings.
 
 ## Current implementation status
 - End-to-end routing and app shell for 13 sections.
