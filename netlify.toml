@@ -1,0 +1,16 @@
+# Root Netlify config for monorepo deploys.
+# This ensures https://geniustrade.netlify.app builds the React app in /frontend
+# even when the site root is connected to the repository root.
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
