@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { API_URL, brokerTest, getConfig, getHealth, killSwitch, setMode } from '../api/client';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -19,6 +20,10 @@ export default function Settings() {
         <p className="text-sm">Health: {health.data?.status || 'unknown'}</p>
         <p className="text-sm">Mode: {config.data?.mode || 'paper'}</p>
         <a href={`${API_URL.replace('/api', '')}/docs`} target="_blank" rel="noreferrer" className="text-sm text-blue-300 underline mt-2 inline-block">Open Backend API Docs</a>
+        <p className="text-sm text-zinc-400 mt-2">
+          Need the step-by-step frontend rollout? Open{' '}
+          <Link className="text-blue-300 underline" to="/build-progress">Build Progress</Link>.
+        </p>
       </Card>
       <Card className="flex flex-wrap gap-2">
         <Button onClick={() => mode.mutate('paper')} loading={mode.isPending}>Set Paper</Button>

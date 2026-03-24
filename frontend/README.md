@@ -38,3 +38,4 @@ VITE_API_URL=https://v5-algo.onrender.com/api npm run verify:api
 - End-to-end routing and app shell for 13 sections.
 - Live polling and action workflows for market data, DRM scan, signals, positions, risk, and settings.
 - Error/loading/empty state components for resilient API-driven UX.
+- Added `/build-progress` page to track PRD/PDP phases with live backend connectivity checks.

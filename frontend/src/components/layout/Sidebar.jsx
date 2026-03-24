@@ -6,6 +6,7 @@ import {
   CandlestickChart,
   FlaskConical,
   LayoutDashboard,
+  ListChecks,
   Newspaper,
   Search,
   Settings,
@@ -39,6 +40,7 @@ const NAV = [
   { section: 'SYSTEM', items: [
     { path: '/performance', icon: TrendingUp, label: 'Performance' },
     { path: '/risk', icon: Shield, label: 'Risk' },
+    { path: '/build-progress', icon: ListChecks, label: 'Build Progress' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ]},
 ];
