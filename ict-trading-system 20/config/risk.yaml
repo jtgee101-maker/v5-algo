@@ -1,0 +1,72 @@
+# Risk Configuration — NON-NEGOTIABLE
+# Changes to this file require explicit human approval via the Self-Improver gate.
+
+base_risk:
+  risk_per_trade: 0.0025        # 0.25% of equity
+  max_simultaneous_risk: 0.0150 # 1.50% total open risk
+  max_correlated_risk: 0.0080   # 0.80% in one correlation group
+  max_per_symbol: 0.0050        # 0.50% max in one instrument
+
+limits:
+  max_daily_loss: 0.015         # 1.5% — triggers daily lockout
+  max_weekly_loss: 0.04         # 4.0% — triggers weekly lockout
+  max_drawdown: 0.18            # 18% — triggers hard account lock + kill switch
+  max_trades_per_day: 3
+  max_spread_atr_pct: 0.15      # Skip if spread > 15% of ATR
+
+correlation_groups:
+  indices:
+    - NAS100
+    - US30
+  fx_majors:
+    - EURUSD
+    - GBPUSD
+  crypto:
+    - BTCUSD
+    - ETHUSD
+
+# Adaptive Drawdown Staircase
+# Each level activates when account drawdown reaches dd_pct.
+# risk_reduction: multiplier reduction applied to base risk_per_trade.
+#   e.g., 0.25 means new risk = base_risk * (1 - 0.25) = 75% of base.
+throttle_levels:
+  - dd_pct: 0.05
+    risk_reduction: 0.25
+    action: cut_risk
+    description: "5% DD — reduce new trade risk by 25%"
+
+  - dd_pct: 0.08
+    risk_reduction: 0.50
+    action: cut_risk_and_positions
+    description: "8% DD — reduce risk by 50%, reduce max concurrent positions"
+
+  - dd_pct: 0.10
+    risk_reduction: 0.75
+    action: a_tier_only
+    description: "10% DD — strategy review mode, only highest confidence setups"
+
+  - dd_pct: 0.12
+    risk_reduction: 0.90
+    action: shadow_weak_strategies
+    description: "12% DD — weaker strategies go to shadow mode"
+
+  - dd_pct: 0.15
+    risk_reduction: 1.00
+    action: capital_preservation
+    description: "15% DD — capital preservation mode, no new trades"
+
+  - dd_pct: 0.18
+    risk_reduction: 1.00
+    action: hard_lock
+    description: "18% DD — HARD ACCOUNT LOCK, kill switch fires"
+
+# Volatility adjustments
+volatility:
+  high_vol_multiplier: 0.5      # Cut size by 50% when VIX/ATR spike
+  high_vol_atr_threshold: 2.0   # ATR > 2x 20-day average = high vol
+
+# News filter
+news:
+  blackout_minutes_before: 15
+  blackout_minutes_after: 10
+  # Major news events loaded from external calendar (Phase 5+)
