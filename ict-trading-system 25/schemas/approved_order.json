@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApprovedOrder",
+  "description": "Output of the Risk Engine — approved trade or rejection",
+  "type": "object",
+  "required": ["approved", "signal_ref", "timestamp"],
+  "properties": {
+    "approved": {"type": "boolean"},
+    "signal_ref": {"type": "string"},
+    "symbol": {"type": "string"},
+    "direction": {"type": "string", "enum": ["long", "short"]},
+    "entry_type": {"type": "string", "enum": ["market", "limit", "stop"]},
+    "entry_price": {"type": "number"},
+    "stop_price": {"type": "number"},
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "price": {"type": "number"},
+          "pct_close": {"type": "number"}
+        }
+      }
+    },
+    "position_size": {"type": "number", "minimum": 0},
+    "risk_amount": {"type": "number", "minimum": 0},
+    "risk_pct_actual": {"type": "number", "minimum": 0},
+    "throttle_state": {
+      "type": "string",
+      "enum": ["normal", "cut_risk", "cut_risk_and_positions", "a_tier_only", "shadow_weak_strategies", "capital_preservation", "hard_lock"]
+    },
+    "checks_passed": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "rejection_reason": {"type": "string"},
+    "rejection_detail": {"type": "string"},
+    "timestamp": {"type": "string", "format": "date-time"}
+  }
+}
