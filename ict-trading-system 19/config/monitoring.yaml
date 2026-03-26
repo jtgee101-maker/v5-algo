@@ -1,0 +1,37 @@
+# Session Monitor Configuration
+
+spread:
+  max_spread_atr_pct: 0.15
+  check_interval_seconds: 5
+
+latency:
+  max_p95_ms: 500
+  window_size: 100
+  check_interval_seconds: 10
+
+fills:
+  max_avg_slippage_ticks: 2.0
+  lookback_trades: 20
+
+rejections:
+  max_per_10min: 2
+
+reconciliation:
+  check_interval_seconds: 60
+  max_resync_attempts: 3
+
+data_feed:
+  stale_price_seconds: 30
+  max_gap_atr: 3.0
+
+safe_mode:
+  delay_seconds: 30
+  clear_seconds: 120
+
+heartbeat:
+  interval_seconds: 30
+
+logging:
+  session_health_file: "logs/session_health.jsonl"
+  execution_log_file: "logs/execution.jsonl"
+  level: INFO
