@@ -1,0 +1,117 @@
+# Strategy Configuration — V1 Family
+
+global:
+  min_confidence_threshold: 0.65
+  min_reward_risk: 1.5
+  max_trades_per_strategy_per_day: 2
+
+  # Confidence dimension weights (must sum to 1.0)
+  confidence_weights:
+    p_setup: 0.25
+    ev_ratio: 0.20
+    regime_confidence: 0.15
+    exec_confidence: 0.10
+    structural_clarity: 0.10
+    correlation_confirm: 0.10
+    session_timing: 0.10
+
+strategies:
+  ny_sweep_reversal:
+    version: v1
+    status: active  # active | shadow | deprecated
+    symbols: [NAS100, US30, EURUSD, BTCUSD]
+    session: ny_killzone
+    bias_timeframes: [15m, 1h]
+    entry_timeframes: [1m, 5m]
+    min_reward_risk: 2.0
+    min_confidence: 0.65
+
+    rules:
+      accumulation:
+        max_range_atr_pct: 0.40   # Pre-NY range must be < 40% of daily ATR
+      manipulation:
+        min_sweep_atr: 0.30       # Sweep must exceed range by 30% of ATR
+        max_sweep_bars: 12        # Sweep must complete within N bars
+      distribution:
+        min_expansion_atr: 0.60   # Distribution must expand > 60% of ATR
+      entry:
+        require_displacement: true
+        require_fvg_retest: true
+        max_entry_bars_after_sweep: 20
+      stop:
+        placement: manipulation_extreme  # Stop at the manipulation leg extreme
+        buffer_ticks: 5
+      targets:
+        - pct_close: 0.50
+          target: opposite_internal_liquidity
+        - pct_close: 0.30
+          target: opening_range_midpoint
+        - pct_close: 0.20
+          target: opening_range_extension
+
+    confidence_boosters:
+      smt_divergence: 0.10
+      psych_level_confluence: 0.10
+      po3_in_manipulation: 0.10
+      displacement_body_gt_2_atr: 0.08
+      volume_spike: 0.05
+
+  ny_continuation:
+    version: v1
+    status: active
+    symbols: [NAS100, US30, EURUSD, BTCUSD]
+    session: ny_killzone
+    bias_timeframes: [15m, 1h]
+    entry_timeframes: [1m, 5m]
+    min_reward_risk: 1.5
+    min_confidence: 0.65
+
+    rules:
+      trend_confirmation:
+        require_bos: true                  # Must have break of structure in trend direction
+        require_no_choch: true             # No change of character against trend
+        min_trend_swings: 2                # At least 2 swings confirming trend
+      liquidity_run:
+        require_sweep: true                # Must sweep liquidity in trend direction
+        sweep_confirms_continuation: true  # Sweep + continuation, not reversal
+      pullback:
+        entry_zone: fvg_or_structure       # Enter at FVG or structure retest
+        max_pullback_atr: 0.50             # Pullback depth limit
+      stop:
+        placement: pullback_structure      # Below/above the pullback structure
+        buffer_ticks: 5
+      targets:
+        - pct_close: 0.40
+          target: next_external_liquidity
+        - pct_close: 0.35
+          target: daily_range_extension
+        - pct_close: 0.25
+          target: runner
+
+  psych_level_model:
+    version: v1
+    status: active
+    symbols: [NAS100, US30, EURUSD, BTCUSD]
+    session: ny_killzone
+    bias_timeframes: [15m, 1h]
+    entry_timeframes: [1m, 5m]
+    min_reward_risk: 2.5
+    min_confidence: 0.70      # Higher threshold — precision only
+
+    rules:
+      level_interaction:
+        proximity_ticks: 10          # Must be within 10 ticks of psych level
+        require_rejection_or_break: true
+        require_displacement: true
+      confluence:
+        min_confluence_count: 3      # Need at least 3 of: SMT, liquidity, displacement, session, structure
+      stop:
+        placement: half_atr          # Tighter stop than other strategies
+        buffer_ticks: 3
+      targets:
+        - pct_close: 0.50
+          target: next_psych_level
+        - pct_close: 0.30
+          target: session_range_target
+        - pct_close: 0.20
+          target: runner
